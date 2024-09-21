@@ -11,7 +11,9 @@ const noteText = document.getElementById('noteText');
 const saveNoteBtn = document.getElementById('saveNote');
 const buttonDivOne = document.getElementById('buttonDivOne');
 const buttonDivTwo = document.getElementById('buttonDivTwo');
-const categorySelect = document.getElementById('categorySelect');
+const categoryInput = document.getElementById('categoryInput');
+const categoryButton = document.getElementById('categoryButton');
+const categoryList = document.getElementById('categoryList');
 
 let currentButton;
 let scoreOne = 0;
@@ -30,7 +32,7 @@ function loadExistingGame() {
         if (game) {
             teamOne.value = game.teamOne;
             teamTwo.value = game.teamTwo;
-            categorySelect.value = game.category;
+            categoryInput.value = game.category;
             currentGameId = game.id;
             totalScoreOne = game.scoreOne;
             totalScoreTwo = game.scoreTwo;
@@ -72,14 +74,14 @@ function createGameBoard() {
 }
 
 function showPlayer() {
-    const category = categorySelect.value;
+    const category = categoryInput.value.trim();
     if (!teamOne.value || !teamTwo.value || !category) {
         alert("Please enter both team names and select a category.");
         return;
     }
     firstPlayer.innerText = teamOne.value;
     secondPlayer.innerText = teamTwo.value;
-    teamNames.style.display = 'none';
+    document.getElementById('teamNames').style.display = 'none';
     appContainer.style.display = 'block';
     createGameBoard();
     
@@ -272,8 +274,43 @@ function restoreButtonStates(states) {
     });
 }
 
+function populateCategoryList() {
+    const categories = JSON.parse(localStorage.getItem('categories')) || ['All', 'FIFA', 'Cards', 'Chess', 'Board Games', '1 v 1\'s', 'Charades', 'Team vs Team'];
+    categoryList.innerHTML = '';
+    categories.forEach(category => {
+        const li = document.createElement('li');
+        li.textContent = category;
+        li.addEventListener('click', () => {
+            categoryInput.value = category;
+            toggleCategoryDropdown();
+        });
+        categoryList.appendChild(li);
+    });
+}
+
+function toggleCategoryDropdown() {
+    categoryList.classList.toggle('show');
+}
+
+function addNewCategory() {
+    const newCategory = prompt("Enter a new category:");
+    if (newCategory && newCategory.trim()) {
+        let categories = JSON.parse(localStorage.getItem('categories')) || ['All', 'FIFA', 'Cards', 'Chess', 'Board Games', '1 v 1\'s', 'Charades', 'Team vs Team'];
+        if (!categories.includes(newCategory)) {
+            categories.push(newCategory);
+            localStorage.setItem('categories', JSON.stringify(categories));
+            populateCategoryList();
+            categoryInput.value = newCategory;
+            alert('New category added successfully!');
+        } else {
+            alert('This category already exists!');
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadExistingGame();
+    populateCategoryList();
 });
 
 document.getElementById('buttonSubmit').addEventListener('click', showPlayer);
@@ -283,10 +320,14 @@ reset.addEventListener('click', resetValue);
 
 closeBtn.addEventListener('click', closeNoteModal);
 saveNoteBtn.addEventListener('click', saveNote);
+categoryButton.addEventListener('click', toggleCategoryDropdown);
 
 window.addEventListener('click', (event) => {
     if (event.target === modal) {
         closeNoteModal();
+    }
+    if (!event.target.matches('#categoryInput') && !event.target.matches('#categoryButton') && !event.target.matches('#categoryButton svg')) {
+        categoryList.classList.remove('show');
     }
 });
 
