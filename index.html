@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Scoreboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="teamNames">
+        <div>
+            <input type="text" id="teamOne" placeholder="Team One Name">
+            <input type="text" id="teamTwo" placeholder="Team Two Name">
+            <select id="categorySelect">
+                <option value="">Select Category</option>
+                <option value="cards">Cards</option>
+                <option value="fifa">FIFA</option>
+                <option value="chess">Chess</option>
+                <option value="boardgames">Board Games</option>
+                <option value="1v1">1 v 1's</option>
+                <option value="charades">Charades</option>
+                <option value="teamvsteam">Team vs Team</option>
+            </select>
+            <button id="buttonSubmit">Submit</button>
+        </div>
+    </div>
+
+    <div id="appContainer">
+        <div id="firstHalfContainer">
+            <div id="firstPlayerContainer">
+                <div id="firstPlayer"></div>
+                <div id="scoreOne" class="score-button"></div>
+            </div>
+            <div id="buttonDivOne"></div>
+        </div>
+
+        <div id="resetDiv">
+            <button id="resetButton">Reset</button>
+        </div>
+
+        <div id="secondHalfContainer">
+            <div id="buttonDivTwo"></div>
+            <div id="secondPlayerContainer">
+                <div id="secondPlayer"></div>
+                <div id="scoreTwo" class="score-button"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="noteModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <textarea id="noteText" placeholder="Enter your note here..."></textarea>
+            <button id="saveNote">Save Note</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
