@@ -3,15 +3,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameList = document.getElementById('gameList');
     const tabWrapper = document.querySelector('.tab-wrapper');
 
-    let games = [
-        { id: 1, name: "Atif/Bali Vs Nahal/Ifi", category: "cards" },
-        { id: 2, name: "Aman Vs Nawab", category: "fifa" },
-        { id: 3, name: "Chess Tournament 2023", category: "chess" },
-        { id: 4, name: "Monopoly Night", category: "boardgames" },
-        { id: 5, name: "Street Fighter Tournament", category: "1v1" },
-        { id: 6, name: "Family Charades", category: "charades" },
-        { id: 7, name: "Football Match: Red vs Blue", category: "teamvsteam" }
-    ];
+    function getGames() {
+        return JSON.parse(localStorage.getItem('games')) || [];
+    }
 
     categoryTabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -24,19 +18,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function displayGames(category) {
         gameList.innerHTML = '';
+        const games = getGames();
         const filteredGames = category === 'all' ? games : games.filter(game => game.category === category);
         filteredGames.forEach(game => {
             const gameElement = document.createElement('div');
             gameElement.classList.add('gameItem');
-            gameElement.textContent = game.name;
+            gameElement.textContent = `${game.teamOne} vs ${game.teamTwo} - ${game.scoreOne}:${game.scoreTwo}`;
+            gameElement.addEventListener('click', () => loadGame(game.id));
             gameList.appendChild(gameElement);
         });
     }
 
-    // Initially display all games
+    function loadGame(gameId) {
+        localStorage.setItem('currentGameId', gameId);
+        window.location.href = 'index.html';
+    }
+
     displayGames('all');
 
-    // Add touch swiping functionality
     let startX;
     let scrollLeft;
 

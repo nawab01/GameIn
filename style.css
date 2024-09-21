@@ -257,6 +257,18 @@ html, body {
     border-radius: 5px;
 }
 
+#backArrow {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    font-size: 24px;
+}
+
+#backArrow a {
+    text-decoration: none;
+    color: #000;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     #teamNames div {

@@ -18,8 +18,30 @@ let scoreOne = 0;
 let scoreTwo = 0;
 let totalScoreOne = 0;
 let totalScoreTwo = 0;
+let currentGameId = null;
 
 appContainer.style.display = 'none';
+
+function loadExistingGame() {
+    const gameId = localStorage.getItem('currentGameId');
+    if (gameId) {
+        const games = JSON.parse(localStorage.getItem('games')) || [];
+        const game = games.find(g => g.id === parseInt(gameId));
+        if (game) {
+            teamOne.value = game.teamOne;
+            teamTwo.value = game.teamTwo;
+            categorySelect.value = game.category;
+            currentGameId = game.id;
+            totalScoreOne = game.scoreOne;
+            totalScoreTwo = game.scoreTwo;
+            showPlayer();
+            updateScoreDisplay(scoreOneDisplay, totalScoreOne);
+            updateScoreDisplay(scoreTwoDisplay, totalScoreTwo);
+            restoreButtonStates(game.buttonStates);
+            localStorage.removeItem('currentGameId');
+        }
+    }
+}
 
 function createGameBoard() {
     for (let i = 0; i < 5; i++) {
@@ -60,8 +82,22 @@ function showPlayer() {
     teamNames.style.display = 'none';
     appContainer.style.display = 'block';
     createGameBoard();
-    updateScoreDisplay(scoreOneDisplay, 0);
-    updateScoreDisplay(scoreTwoDisplay, 0);
+    
+    if (!currentGameId) {
+        currentGameId = Date.now();
+        const newGame = {
+            id: currentGameId,
+            teamOne: teamOne.value,
+            teamTwo: teamTwo.value,
+            category: category,
+            scoreOne: 0,
+            scoreTwo: 0,
+            buttonStates: Array(10).fill(0)
+        };
+        let games = JSON.parse(localStorage.getItem('games')) || [];
+        games.push(newGame);
+        localStorage.setItem('games', JSON.stringify(games));
+    }
 }
 
 function updateScoreDisplay(scoreDisplay, score) {
@@ -92,6 +128,8 @@ function checkScore(team) {
     if (colorCount === 5) {
         clearButtons(team);
     }
+
+    updateGameState();
 }
 
 function clearButtons(team) {
@@ -126,6 +164,8 @@ function resetValue() {
     totalScoreTwo = 0;
     updateScoreDisplay(scoreOneDisplay, totalScoreOne);
     updateScoreDisplay(scoreTwoDisplay, totalScoreTwo);
+
+    updateGameState();
 }
 
 function addCourt(event) {
@@ -201,6 +241,41 @@ function saveNote() {
     }
 }
 
+function updateGameState() {
+    if (currentGameId) {
+        let games = JSON.parse(localStorage.getItem('games')) || [];
+        const gameIndex = games.findIndex(game => game.id === currentGameId);
+        if (gameIndex !== -1) {
+            games[gameIndex].scoreOne = totalScoreOne;
+            games[gameIndex].scoreTwo = totalScoreTwo;
+            games[gameIndex].buttonStates = getButtonStates();
+            localStorage.setItem('games', JSON.stringify(games));
+        }
+    }
+}
+
+function getButtonStates() {
+    const buttons = [...document.querySelectorAll('.buttonsOne'), ...document.querySelectorAll('.buttonsTwo')];
+    return buttons.map(button => button.getAttribute('data-state'));
+}
+
+function restoreButtonStates(states) {
+    const buttons = [...document.querySelectorAll('.buttonsOne'), ...document.querySelectorAll('.buttonsTwo')];
+    buttons.forEach((button, index) => {
+        if (states[index] === '1') {
+            button.style.backgroundColor = 'rgb(0, 255, 255)';
+            button.setAttribute('data-state', '1');
+        } else {
+            button.style.backgroundColor = 'rgb(240, 240, 240)';
+            button.setAttribute('data-state', '0');
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadExistingGame();
+});
+
 document.getElementById('buttonSubmit').addEventListener('click', showPlayer);
 
 const reset = document.getElementById('resetButton');
@@ -214,3 +289,5 @@ window.addEventListener('click', (event) => {
         closeNoteModal();
     }
 });
+
+window.addEventListener('beforeunload', updateGameState);
