@@ -331,17 +331,18 @@ html, body {
 }
 
 .gameItem {
-    background-color: black;
+    background-color: #333;
     color: white;
     padding: 15px;
     border-radius: 9999px;
     cursor: pointer;
-    transition: background-color 0.3s;
-    margin-bottom: 10px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    user-select: none;
+    touch-action: pan-y;
 }
 
 .gameItem:hover {
-    background-color: #333;
+    background-color: #444;
 }
 
 #backArrow {
@@ -356,11 +357,8 @@ html, body {
     color: #000;
 }
 
-
 /* Responsive design */
 @media (max-width: 768px) {
-
-
     #teamNames div {
         display: flex;
         flex-direction: column;

@@ -332,3 +332,4 @@ window.addEventListener('click', (event) => {
 });
 
 window.addEventListener('beforeunload', updateGameState);
+
