@@ -39,7 +39,7 @@ function loadExistingGame() {
             showPlayer();
             updateScoreDisplay(scoreOneDisplay, totalScoreOne);
             updateScoreDisplay(scoreTwoDisplay, totalScoreTwo);
-            restoreButtonStates(game.buttonStates);
+            restoreButtonStates(game.buttonStates, game.notes);
             localStorage.removeItem('currentGameId');
         }
     }
@@ -94,7 +94,8 @@ function showPlayer() {
             category: category,
             scoreOne: 0,
             scoreTwo: 0,
-            buttonStates: Array(10).fill(0)
+            buttonStates: Array(10).fill(0),
+            notes: Array(10).fill('')
         };
         let games = JSON.parse(localStorage.getItem('games')) || [];
         games.push(newGame);
@@ -251,6 +252,7 @@ function updateGameState() {
             games[gameIndex].scoreOne = totalScoreOne;
             games[gameIndex].scoreTwo = totalScoreTwo;
             games[gameIndex].buttonStates = getButtonStates();
+            games[gameIndex].notes = getNotes();
             localStorage.setItem('games', JSON.stringify(games));
         }
     }
@@ -261,7 +263,15 @@ function getButtonStates() {
     return buttons.map(button => button.getAttribute('data-state'));
 }
 
-function restoreButtonStates(states) {
+function getNotes() {
+    const buttons = [...document.querySelectorAll('.buttonsOne'), ...document.querySelectorAll('.buttonsTwo')];
+    return buttons.map(button => {
+        const noteCloud = button.querySelector('.note-cloud');
+        return noteCloud ? noteCloud.title : '';
+    });
+}
+
+function restoreButtonStates(states, notes) {
     const buttons = [...document.querySelectorAll('.buttonsOne'), ...document.querySelectorAll('.buttonsTwo')];
     buttons.forEach((button, index) => {
         if (states[index] === '1') {
@@ -270,6 +280,22 @@ function restoreButtonStates(states) {
         } else {
             button.style.backgroundColor = 'rgb(240, 240, 240)';
             button.setAttribute('data-state', '0');
+        }
+        
+        // Restore notes
+        if (notes && notes[index]) {
+            let noteCloud = button.querySelector('.note-cloud');
+            if (!noteCloud) {
+                noteCloud = document.createElement('div');
+                noteCloud.className = 'note-cloud';
+                button.appendChild(noteCloud);
+                noteCloud.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                    openNoteModal({currentTarget: button, stopPropagation: () => {}});
+                });
+            }
+            noteCloud.textContent = notes[index].substring(0, 10) + (notes[index].length > 10 ? '...' : '');
+            noteCloud.title = notes[index];
         }
     });
 }
