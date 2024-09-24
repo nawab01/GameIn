@@ -1,388 +1,376 @@
-const teamOne = document.getElementById('teamOne');
-const firstPlayer = document.getElementById('firstPlayer'); 
-const teamTwo = document.getElementById('teamTwo');
-const appContainer = document.getElementById('appContainer');
-const secondPlayer = document.getElementById('secondPlayer'); 
-const scoreOneDisplay = document.getElementById('scoreOne');
-const scoreTwoDisplay = document.getElementById('scoreTwo');
-const modal = document.getElementById('noteModal');
-const closeBtn = document.getElementsByClassName('close')[0];
-const noteText = document.getElementById('noteText');
-const saveNoteBtn = document.getElementById('saveNote');
-const buttonDivOne = document.getElementById('buttonDivOne');
-const buttonDivTwo = document.getElementById('buttonDivTwo');
-const categoryInput = document.getElementById('categoryInput');
-const categoryButton = document.getElementById('categoryButton');
-const categoryList = document.getElementById('categoryList');
-const refreshOne = document.getElementById('refreshOne');
-const refreshTwo = document.getElementById('refreshTwo');
+// config.js
+const config = {
+    initialCategories: ['All', 'FIFA', 'Cards', 'Chess', 'Board Games', '1 v 1\'s', 'Charades', 'Team vs Team']
+};
 
-let currentButton;
-let scoreOne = 0;
-let scoreTwo = 0;
-let totalScoreOne = 0;
-let totalScoreTwo = 0;
-let currentGameId = null;
-let gameStats = [];
+// domElements.js
+const domElements = {
+    teamOne: document.getElementById('teamOne'),
+    firstPlayer: document.getElementById('firstPlayer'),
+    teamTwo: document.getElementById('teamTwo'),
+    appContainer: document.getElementById('appContainer'),
+    secondPlayer: document.getElementById('secondPlayer'),
+    scoreOneDisplay: document.getElementById('scoreOne'),
+    scoreTwoDisplay: document.getElementById('scoreTwo'),
+    modal: document.getElementById('noteModal'),
+    closeBtn: document.getElementsByClassName('close')[0],
+    noteText: document.getElementById('noteText'),
+    saveNoteBtn: document.getElementById('saveNote'),
+    buttonDivOne: document.getElementById('buttonDivOne'),
+    buttonDivTwo: document.getElementById('buttonDivTwo'),
+    categoryInput: document.getElementById('categoryInput'),
+    categoryButton: document.getElementById('categoryButton'),
+    categoryList: document.getElementById('categoryList'),
+    refreshOne: document.getElementById('refreshOne'),
+    refreshTwo: document.getElementById('refreshTwo'),
+    resetButton: document.getElementById('resetButton'),
+    buttonSubmit: document.getElementById('buttonSubmit')
+};
 
-appContainer.style.display = 'none';
+// gameState.js
+const gameState = {
+    currentButton: null,
+    scoreOne: 0,
+    scoreTwo: 0,
+    totalScoreOne: 0,
+    totalScoreTwo: 0,
+    currentGameId: null,
+    gameStats: []
+};
 
-function loadExistingGame() {
-    const gameId = localStorage.getItem('currentGameId');
-    if (gameId) {
-        const games = JSON.parse(localStorage.getItem('games')) || [];
-        const game = games.find(g => g.id === parseInt(gameId));
-        if (game) {
-            teamOne.value = game.teamOne;
-            teamTwo.value = game.teamTwo;
-            categoryInput.value = game.category;
-            currentGameId = game.id;
-            totalScoreOne = game.scoreOne;
-            totalScoreTwo = game.scoreTwo;
-            gameStats = game.stats || [];
-            showPlayer();
-            updateScoreDisplay(scoreOneDisplay, totalScoreOne);
-            updateScoreDisplay(scoreTwoDisplay, totalScoreTwo);
-            restoreButtonStates(game.buttonStates, game.notes);
-            localStorage.removeItem('currentGameId');
-        }
-    }
-}
-
-function createGameBoard() {
-    for (let i = 0; i < 5; i++) {
-        const buttonOne = document.createElement('button');
-        buttonOne.className = 'buttonsOne';
-        buttonOne.setAttribute('data-state', '0');
-        buttonDivOne.appendChild(buttonOne);
-
-        const buttonTwo = document.createElement('button');
-        buttonTwo.className = 'buttonsTwo';
-        buttonTwo.setAttribute('data-state', '0');
-        buttonDivTwo.appendChild(buttonTwo);
-    }
-
-    const addButtonsOne = document.querySelectorAll('.buttonsOne');
-    addButtonsOne.forEach(button => {
-        button.addEventListener('click', () => addCourt(button, 'One'));
-        button.addEventListener('dblclick', openNoteModal);
-    });
-
-    const addButtonsTwo = document.querySelectorAll('.buttonsTwo');
-    addButtonsTwo.forEach(button => {
-        button.addEventListener('click', () => addCourt(button, 'Two'));
-        button.addEventListener('dblclick', openNoteModal);
-    });
-}
-
-function showPlayer() {
-    const category = categoryInput.value.trim();
-    if (!teamOne.value || !teamTwo.value || !category) {
-        alert("Please enter both team names and select a category.");
-        return;
-    }
-    firstPlayer.innerText = teamOne.value;
-    secondPlayer.innerText = teamTwo.value;
-    document.getElementById('teamNames').style.display = 'none';
-    appContainer.style.display = 'block';
-    createGameBoard();
-    
-    if (!currentGameId) {
-        currentGameId = Date.now();
-        const newGame = {
-            id: currentGameId,
-            teamOne: teamOne.value,
-            teamTwo: teamTwo.value,
-            category: category,
-            scoreOne: 0,
-            scoreTwo: 0,
-            buttonStates: Array(10).fill(0),
-            notes: Array(10).fill(''),
-            stats: []
-        };
+// localStorage.js
+const storage = {
+    saveGame(game) {
         let games = JSON.parse(localStorage.getItem('games')) || [];
-        games.push(newGame);
+        const index = games.findIndex(g => g.id === game.id);
+        if (index !== -1) {
+            games[index] = game;
+        } else {
+            games.push(game);
+        }
         localStorage.setItem('games', JSON.stringify(games));
+    },
+    loadGame(gameId) {
+        const games = JSON.parse(localStorage.getItem('games')) || [];
+        return games.find(g => g.id === parseInt(gameId));
+    },
+    saveCategories(categories) {
+        localStorage.setItem('categories', JSON.stringify(categories));
+    },
+    loadCategories() {
+        return JSON.parse(localStorage.getItem('categories')) || config.initialCategories;
     }
+};
 
-    // Update stats link
-    const existingStatsLink = document.querySelector('.stats-link');
-    if (existingStatsLink) {
-        existingStatsLink.remove();
-    }
-    const statsLink = document.createElement('a');
-    statsLink.href = `stats.html?gameId=${currentGameId}`;
-    statsLink.textContent = 'View Stats';
-    statsLink.className = 'stats-link';
-    appContainer.appendChild(statsLink);
-}
-
-function updateScoreDisplay(scoreDisplay, score) {
-    scoreDisplay.innerText = score;
-    scoreDisplay.style.display = 'inline-flex';
-}
-
-function checkScore(team) {
-    let colorCount = 0;
-    const buttons = document.querySelectorAll(`.buttons${team}`);
-    buttons.forEach(button => {
-        const color = window.getComputedStyle(button).backgroundColor;
-        if (color === 'rgb(0, 255, 255)') {
-            colorCount++;
+// gameBoard.js
+const gameBoard = {
+    create() {
+        for (let i = 0; i < 5; i++) {
+            this.createButton('One');
+            this.createButton('Two');
         }
-    });
-    
-    if (team === 'One') {
-        scoreOne = colorCount;
-        totalScoreOne = Math.floor(totalScoreOne / 5) * 5 + scoreOne;
-        updateScoreDisplay(scoreOneDisplay, totalScoreOne);
-    } else {
-        scoreTwo = colorCount;
-        totalScoreTwo = Math.floor(totalScoreTwo / 5) * 5 + scoreTwo;
-        updateScoreDisplay(scoreTwoDisplay, totalScoreTwo);
-    }
-
-    updateGameState();
-}
-
-function clearButtons(team) {
-    const buttons = document.querySelectorAll(`.buttons${team}`);
-    buttons.forEach(button => {
-        const noteCloud = button.querySelector('.note-cloud');
-        if (noteCloud) {
-            noteCloud.remove();
-        }
-        button.style.backgroundColor = 'rgb(240, 240, 240)';
+        this.addEventListeners();
+    },
+    createButton(team) {
+        const button = document.createElement('button');
+        button.className = `buttons${team}`;
         button.setAttribute('data-state', '0');
-    });
-    if (team === 'One') {
-        scoreOne = 0;
-    } else {
-        scoreTwo = 0;
-    }
-    checkScore(team);
-}
-
-function resetValue() {
-    clearButtons('One');
-    clearButtons('Two');
-    totalScoreOne = 0;
-    totalScoreTwo = 0;
-    updateScoreDisplay(scoreOneDisplay, totalScoreOne);
-    updateScoreDisplay(scoreTwoDisplay, totalScoreTwo);
-    updateGameState();
-}
-
-function addCourt(button, team) {
-    if (button.classList.contains('note-cloud')) {
-        return;
-    }
-
-    const noteCloud = button.querySelector('.note-cloud');
-    if (noteCloud) {
-        return;
-    }
-
-    const currentState = parseInt(button.getAttribute('data-state'));
-
-    if (currentState % 2 === 0) {
-        button.style.backgroundColor = 'rgb(0, 255, 255)';
-        button.setAttribute('data-state', '1');
-    } else {
-        button.style.backgroundColor = 'rgb(240, 240, 240)';
-        button.setAttribute('data-state', '0');
-    }
-
-    // Update game stats only if there's a note
-    const note = button.querySelector('.note-cloud')?.title || '';
-    if (note.trim() !== '') {
-        const buttonIndex = Array.from(button.parentNode.children).indexOf(button);
-        const statObject = {
-            timestamp: Date.now(),
-            team: team,
-            buttonIndex: buttonIndex,
-            state: button.getAttribute('data-state'),
-            note: note
+        domElements[`buttonDiv${team}`].appendChild(button);
+    },
+    addEventListeners() {
+        const addButtons = (team) => {
+            document.querySelectorAll(`.buttons${team}`).forEach(button => {
+                button.addEventListener('click', () => this.addCourt(button, team));
+                button.addEventListener('dblclick', noteModal.open);
+            });
         };
-        gameStats.push(statObject);
+        addButtons('One');
+        addButtons('Two');
+    },
+    addCourt(button, team) {
+        if (button.classList.contains('note-cloud') || button.querySelector('.note-cloud')) {
+            return;
+        }
+
+        const currentState = parseInt(button.getAttribute('data-state'));
+        button.style.backgroundColor = currentState % 2 === 0 ? 'rgb(0, 255, 255)' : 'rgb(240, 240, 240)';
+        button.setAttribute('data-state', (currentState + 1) % 2);
+
+        const note = button.querySelector('.note-cloud')?.title || '';
+        if (note.trim() !== '') {
+            const buttonIndex = Array.from(button.parentNode.children).indexOf(button);
+            gameState.gameStats.push({
+                timestamp: Date.now(),
+                team: team,
+                buttonIndex: buttonIndex,
+                state: button.getAttribute('data-state'),
+                note: note
+            });
+        }
+
+        score.check(team);
+    },
+    clear(team) {
+        document.querySelectorAll(`.buttons${team}`).forEach(button => {
+            const noteCloud = button.querySelector('.note-cloud');
+            if (noteCloud) {
+                noteCloud.remove();
+            }
+            button.style.backgroundColor = 'rgb(240, 240, 240)';
+            button.setAttribute('data-state', '0');
+        });
+        gameState[`score${team}`] = 0;
+        score.check(team);
+    },
+    getStates() {
+        return [...document.querySelectorAll('.buttonsOne'), ...document.querySelectorAll('.buttonsTwo')]
+            .map(button => button.getAttribute('data-state'));
+    },
+    getNotes() {
+        return [...document.querySelectorAll('.buttonsOne'), ...document.querySelectorAll('.buttonsTwo')]
+            .map(button => button.querySelector('.note-cloud')?.title || '');
+    },
+    restoreStates(states, notes) {
+        const buttons = [...document.querySelectorAll('.buttonsOne'), ...document.querySelectorAll('.buttonsTwo')];
+        buttons.forEach((button, index) => {
+            button.style.backgroundColor = states[index] === '1' ? 'rgb(0, 255, 255)' : 'rgb(240, 240, 240)';
+            button.setAttribute('data-state', states[index]);
+            
+            if (notes && notes[index]) {
+                noteModal.createNoteCloud(button, notes[index]);
+            }
+        });
     }
+};
 
-    checkScore(team);
-}
-
-function openNoteModal(event) {
-    event.stopPropagation();
-    currentButton = event.currentTarget;
-    const existingNote = currentButton.querySelector('.note-cloud');
-    if (existingNote) {
-        noteText.value = existingNote.title;
-    } else {
-        noteText.value = '';
+// score.js
+const score = {
+    check(team) {
+        const buttons = document.querySelectorAll(`.buttons${team}`);
+        const colorCount = Array.from(buttons).filter(button => 
+            window.getComputedStyle(button).backgroundColor === 'rgb(0, 255, 255)'
+        ).length;
+        
+        gameState[`score${team}`] = colorCount;
+        gameState[`totalScore${team}`] = Math.floor(gameState[`totalScore${team}`] / 5) * 5 + colorCount;
+        this.updateDisplay(team);
+        gameState.updateState();
+    },
+    updateDisplay(team) {
+        domElements[`score${team}Display`].innerText = gameState[`totalScore${team}`];
+        domElements[`score${team}Display`].style.display = 'inline-flex';
+    },
+    reset() {
+        gameBoard.clear('One');
+        gameBoard.clear('Two');
+        gameState.totalScoreOne = 0;
+        gameState.totalScoreTwo = 0;
+        this.updateDisplay('One');
+        this.updateDisplay('Two');
+        gameState.updateState();
     }
-    modal.style.display = 'block';
-}
+};
 
-function closeNoteModal() {
-    modal.style.display = 'none';
-}
+// noteModal.js
+const noteModal = {
+    open(event) {
+        event.stopPropagation();
+        gameState.currentButton = event.currentTarget;
+        const existingNote = gameState.currentButton.querySelector('.note-cloud');
+        domElements.noteText.value = existingNote ? existingNote.title : '';
+        domElements.modal.style.display = 'block';
+    },
+    close() {
+        domElements.modal.style.display = 'none';
+    },
+    save() {
+        const note = domElements.noteText.value.trim();
+        if (note) {
+            this.createNoteCloud(gameState.currentButton, note);
+            gameState.currentButton.style.backgroundColor = 'rgb(0, 255, 255)';
+            gameState.currentButton.setAttribute('data-state', '1');
 
-function saveNote() {
-    const note = noteText.value.trim();
-    if (note) {
-        let noteCloud = currentButton.querySelector('.note-cloud');
+            const buttonIndex = Array.from(gameState.currentButton.parentNode.children).indexOf(gameState.currentButton);
+            const teamIndex = gameState.currentButton.classList.contains('buttonsOne') ? 0 : 1;
+            gameState.gameStats.push({
+                timestamp: Date.now(),
+                team: teamIndex === 0 ? 'One' : 'Two',
+                buttonIndex: buttonIndex,
+                state: gameState.currentButton.getAttribute('data-state'),
+                note: note
+            });
+        } else {
+            const existingNote = gameState.currentButton.querySelector('.note-cloud');
+            if (existingNote) {
+                existingNote.remove();
+                gameState.currentButton.style.backgroundColor = 'rgb(240, 240, 240)';
+                gameState.currentButton.setAttribute('data-state', '0');
+            }
+        }
+
+        this.close();
+        score.check(gameState.currentButton.classList.contains('buttonsOne') ? 'One' : 'Two');
+    },
+    createNoteCloud(button, note) {
+        let noteCloud = button.querySelector('.note-cloud');
         if (!noteCloud) {
             noteCloud = document.createElement('div');
             noteCloud.className = 'note-cloud';
-            currentButton.appendChild(noteCloud);
-            noteCloud.addEventListener('click', function(event) {
+            button.appendChild(noteCloud);
+            noteCloud.addEventListener('click', (event) => {
                 event.stopPropagation();
-                openNoteModal({currentTarget: currentButton, stopPropagation: () => {}});
+                this.open({currentTarget: button, stopPropagation: () => {}});
             });
         }
         noteCloud.textContent = note.substring(0, 10) + (note.length > 10 ? '...' : '');
         noteCloud.title = note;
-        
-        currentButton.style.backgroundColor = 'rgb(0, 255, 255)';
-        currentButton.setAttribute('data-state', '1');
-
-        // Update game stats
-        const buttonIndex = Array.from(currentButton.parentNode.children).indexOf(currentButton);
-        const teamIndex = currentButton.classList.contains('buttonsOne') ? 0 : 1;
-        const statObject = {
-            timestamp: Date.now(),
-            team: teamIndex === 0 ? 'One' : 'Two',
-            buttonIndex: buttonIndex,
-            state: currentButton.getAttribute('data-state'),
-            note: note
-        };
-        gameStats.push(statObject);
-    } else {
-        const existingNote = currentButton.querySelector('.note-cloud');
-        if (existingNote) {
-            existingNote.remove();
-            currentButton.style.backgroundColor = 'rgb(240, 240, 240)';
-            currentButton.setAttribute('data-state', '0');
-        }
     }
+};
 
-    closeNoteModal();
-    checkScore(currentButton.classList.contains('buttonsOne') ? 'One' : 'Two');
-}
-
-function updateGameState() {
-    if (currentGameId) {
-        let games = JSON.parse(localStorage.getItem('games')) || [];
-        const gameIndex = games.findIndex(game => game.id === currentGameId);
-        if (gameIndex !== -1) {
-            games[gameIndex].scoreOne = totalScoreOne;
-            games[gameIndex].scoreTwo = totalScoreTwo;
-            games[gameIndex].buttonStates = getButtonStates();
-            games[gameIndex].notes = getNotes();
-            games[gameIndex].stats = gameStats;
-            localStorage.setItem('games', JSON.stringify(games));
-        }
-    }
-}
-
-function getButtonStates() {
-    const buttons = [...document.querySelectorAll('.buttonsOne'), ...document.querySelectorAll('.buttonsTwo')];
-    return buttons.map(button => button.getAttribute('data-state'));
-}
-
-function getNotes() {
-    const buttons = [...document.querySelectorAll('.buttonsOne'), ...document.querySelectorAll('.buttonsTwo')];
-    return buttons.map(button => {
-        const noteCloud = button.querySelector('.note-cloud');
-        return noteCloud ? noteCloud.title : '';
-    });
-}
-
-function restoreButtonStates(states, notes) {
-    const buttons = [...document.querySelectorAll('.buttonsOne'), ...document.querySelectorAll('.buttonsTwo')];
-    buttons.forEach((button, index) => {
-        if (states[index] === '1') {
-            button.style.backgroundColor = 'rgb(0, 255, 255)';
-            button.setAttribute('data-state', '1');
-        } else {
-            button.style.backgroundColor = 'rgb(240, 240, 240)';
-            button.setAttribute('data-state', '0');
-        }
-        
-        if (notes && notes[index]) {
-            let noteCloud = button.querySelector('.note-cloud');
-            if (!noteCloud) {
-                noteCloud = document.createElement('div');
-                noteCloud.className = 'note-cloud';
-                button.appendChild(noteCloud);
-                noteCloud.addEventListener('click', function(event) {
-                    event.stopPropagation();
-                    openNoteModal({currentTarget: button, stopPropagation: () => {}});
-                });
-            }
-            noteCloud.textContent = notes[index].substring(0, 10) + (notes[index].length > 10 ? '...' : '');
-            noteCloud.title = notes[index];
-        }
-    });
-}
-
-function populateCategoryList() {
-    const categories = JSON.parse(localStorage.getItem('categories')) || ['All', 'FIFA', 'Cards', 'Chess', 'Board Games', '1 v 1\'s', 'Charades', 'Team vs Team'];
-    categoryList.innerHTML = '';
-    categories.forEach(category => {
-        const li = document.createElement('li');
-        li.textContent = category;
-        li.addEventListener('click', () => {
-            categoryInput.value = category;
-            toggleCategoryDropdown();
+// category.js
+const category = {
+    populate() {
+        const categories = storage.loadCategories();
+        domElements.categoryList.innerHTML = '';
+        categories.forEach(category => {
+            const li = document.createElement('li');
+            li.textContent = category;
+            li.addEventListener('click', () => {
+                domElements.categoryInput.value = category;
+                this.toggleDropdown();
+            });
+            domElements.categoryList.appendChild(li);
         });
-        categoryList.appendChild(li);
-    });
-}
-
-function toggleCategoryDropdown() {
-    categoryList.classList.toggle('show');
-}
-
-function addNewCategory() {
-    const newCategory = prompt("Enter a new category:");
-    if (newCategory && newCategory.trim()) {
-        let categories = JSON.parse(localStorage.getItem('categories')) || ['All', 'FIFA', 'Cards', 'Chess', 'Board Games', '1 v 1\'s', 'Charades', 'Team vs Team'];
-        if (!categories.includes(newCategory)) {
-            categories.push(newCategory);
-            localStorage.setItem('categories', JSON.stringify(categories));
-            populateCategoryList();
-            categoryInput.value = newCategory;
-            alert('New category added successfully!');
-        } else {
-            alert('This category already exists!');
+    },
+    toggleDropdown() {
+        domElements.categoryList.classList.toggle('show');
+    },
+    add() {
+        const newCategory = prompt("Enter a new category:");
+        if (newCategory && newCategory.trim()) {
+            let categories = storage.loadCategories();
+            if (!categories.includes(newCategory)) {
+                categories.push(newCategory);
+                storage.saveCategories(categories);
+                this.populate();
+                domElements.categoryInput.value = newCategory;
+                alert('New category added successfully!');
+            } else {
+                alert('This category already exists!');
+            }
         }
     }
-}
+};
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadExistingGame();
-    populateCategoryList();
-});
+// game.js
+const game = {
+    init() {
+        domElements.appContainer.style.display = 'none';
+        this.loadExisting();
+        category.populate();
+        this.addEventListeners();
+    },
+    loadExisting() {
+        const gameId = localStorage.getItem('currentGameId');
+        if (gameId) {
+            const game = storage.loadGame(gameId);
+            if (game) {
+                this.restore(game);
+                localStorage.removeItem('currentGameId');
+            }
+        }
+    },
+    restore(game) {
+        domElements.teamOne.value = game.teamOne;
+        domElements.teamTwo.value = game.teamTwo;
+        domElements.categoryInput.value = game.category;
+        gameState.currentGameId = game.id;
+        gameState.totalScoreOne = game.scoreOne;
+        gameState.totalScoreTwo = game.scoreTwo;
+        gameState.gameStats = game.stats || [];
+        this.showPlayer();
+        score.updateDisplay('One');
+        score.updateDisplay('Two');
+        gameBoard.restoreStates(game.buttonStates, game.notes);
+    },
+    showPlayer() {
+        const category = domElements.categoryInput.value.trim();
+        if (!domElements.teamOne.value || !domElements.teamTwo.value || !category) {
+            alert("Please enter both team names and select a category.");
+            return;
+        }
+        domElements.firstPlayer.innerText = domElements.teamOne.value;
+        domElements.secondPlayer.innerText = domElements.teamTwo.value;
+        document.getElementById('teamNames').style.display = 'none';
+        domElements.appContainer.style.display = 'block';
+        gameBoard.create();
+        
+        if (!gameState.currentGameId) {
+            gameState.currentGameId = Date.now();
+            const newGame = {
+                id: gameState.currentGameId,
+                teamOne: domElements.teamOne.value,
+                teamTwo: domElements.teamTwo.value,
+                category: category,
+                scoreOne: 0,
+                scoreTwo: 0,
+                buttonStates: Array(10).fill(0),
+                notes: Array(10).fill(''),
+                stats: []
+            };
+            storage.saveGame(newGame);
+        }
 
-document.getElementById('buttonSubmit').addEventListener('click', showPlayer);
+        this.updateStatsLink();
+    },
+    updateStatsLink() {
+        const existingStatsLink = document.querySelector('.stats-link');
+        if (existingStatsLink) {
+            existingStatsLink.remove();
+        }
+        const statsLink = document.createElement('a');
+        statsLink.href = `stats.html?gameId=${gameState.currentGameId}`;
+        statsLink.textContent = 'stats';
+        statsLink.className = 'stats-link';
+        domElements.appContainer.appendChild(statsLink);
+    },
+    updateState() {
+        if (gameState.currentGameId) {
+            const game = {
+                id: gameState.currentGameId,
+                teamOne: domElements.teamOne.value,
+                teamTwo: domElements.teamTwo.value,
+                category: domElements.categoryInput.value,
+                scoreOne: gameState.totalScoreOne,
+                scoreTwo: gameState.totalScoreTwo,
+                buttonStates: gameBoard.getStates(),
+                notes: gameBoard.getNotes(),
+                stats: gameState.gameStats
+            };
+            storage.saveGame(game);
+        }
+    },
+    addEventListeners() {
+        domElements.buttonSubmit.addEventListener('click', () => this.showPlayer());
+        domElements.resetButton.addEventListener('click', () => score.reset());
+        domElements.refreshOne.addEventListener('click', () => gameBoard.clear('One'));
+        domElements.refreshTwo.addEventListener('click', () => gameBoard.clear('Two'));
+        domElements.closeBtn.addEventListener('click', () => noteModal.close());
+        domElements.saveNoteBtn.addEventListener('click', () => noteModal.save());
+        domElements.categoryButton.addEventListener('click', () => category.toggleDropdown());
 
-const reset = document.getElementById('resetButton');
-reset.addEventListener('click', resetValue);
+        window.addEventListener('click', (event) => {
+            if (event.target === domElements.modal) {
+                noteModal.close();
+            }
+            if (!event.target.matches('#categoryInput') && !event.target.matches('#categoryButton') && !event.target.matches('#categoryButton svg')) {
+                domElements.categoryList.classList.remove('show');
+            }
+        });
 
-refreshOne.addEventListener('click', () => clearButtons('One'));
-refreshTwo.addEventListener('click', () => clearButtons('Two'));
-
-closeBtn.addEventListener('click', closeNoteModal);
-saveNoteBtn.addEventListener('click', saveNote);
-categoryButton.addEventListener('click', toggleCategoryDropdown);
-
-window.addEventListener('click', (event) => {
-    if (event.target === modal) {
-        closeNoteModal();
+        window.addEventListener('beforeunload', () => this.updateState());
     }
-    if (!event.target.matches('#categoryInput') && !event.target.matches('#categoryButton') && !event.target.matches('#categoryButton svg')) {
-        categoryList.classList.remove('show');
-    }
-});
+};
 
-window.addEventListener('beforeunload', updateGameState);
+// Initialize the game
+document.addEventListener('DOMContentLoaded', () => game.init());

@@ -375,6 +375,24 @@ html, body {
     color: #000;
 }
 
+.stats-link {
+    padding: 0 15px;
+        font-size: 14px;
+        height: 35px;
+    background-color: aqua;
+    border: none;
+    color: black;
+    padding: 0 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 5px;
+    cursor: pointer;
+    border-radius: 20px;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     #teamNames div {

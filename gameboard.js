@@ -135,23 +135,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     tabWrapper.addEventListener('mousedown', (e) => {
         isDown = true;
+        tabWrapper.classList.add('active');
         startX = e.pageX - tabWrapper.offsetLeft;
         scrollLeft = tabWrapper.scrollLeft;
     });
 
     tabWrapper.addEventListener('mouseleave', () => {
         isDown = false;
+        tabWrapper.classList.remove('active');
     });
 
     tabWrapper.addEventListener('mouseup', () => {
         isDown = false;
+        tabWrapper.classList.remove('active');
     });
 
     tabWrapper.addEventListener('mousemove', (e) => {
         if (!isDown) return;
         e.preventDefault();
         const x = e.pageX - tabWrapper.offsetLeft;
-        const walk = (x - startX) * 3;
+        const walk = (x - startX) * 2; // Reduced multiplier for smoother scrolling
         tabWrapper.scrollLeft = scrollLeft - walk;
     });
 
