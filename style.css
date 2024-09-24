@@ -317,10 +317,14 @@ html, body {
 }
 
 .tab-wrapper {
-    display: inline-flex;
-    gap: 10px;
-    padding-bottom: 10px;
-}
+    overflow-x: auto;
+    touch-action: pan-x;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .tab-wrapper::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
 
 .tab {
     background-color: transparent;

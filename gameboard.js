@@ -133,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let startX;
     let scrollLeft;
 
+    // Mouse events
     tabWrapper.addEventListener('mousedown', (e) => {
         isDown = true;
         tabWrapper.classList.add('active');
@@ -161,19 +162,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // Touch events for mobile
     tabWrapper.addEventListener('touchstart', (e) => {
         isDown = true;
+        tabWrapper.classList.add('active');
         startX = e.touches[0].pageX - tabWrapper.offsetLeft;
         scrollLeft = tabWrapper.scrollLeft;
     }, { passive: true });
 
     tabWrapper.addEventListener('touchend', () => {
         isDown = false;
+        tabWrapper.classList.remove('active');
+    });
+
+    tabWrapper.addEventListener('touchcancel', () => {
+        isDown = false;
+        tabWrapper.classList.remove('active');
     });
 
     tabWrapper.addEventListener('touchmove', (e) => {
         if (!isDown) return;
         e.preventDefault();
         const x = e.touches[0].pageX - tabWrapper.offsetLeft;
-        const walk = (x - startX) * 3;
+        const walk = (x - startX) * 2; // Reduced multiplier for smoother scrolling
         tabWrapper.scrollLeft = scrollLeft - walk;
     }, { passive: false });
 });
