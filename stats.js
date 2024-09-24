@@ -5,6 +5,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameInfo = document.getElementById('gameInfo');
     const teamOneStats = document.getElementById('teamOneStats');
     const teamTwoStats = document.getElementById('teamTwoStats');
+    const backToGameLink = document.getElementById('backToGame');
+
+    // Set up the back link functionality
+    backToGameLink.addEventListener('click', () => {
+        localStorage.setItem('currentGameId', gameId);
+        window.location.href = 'gameboard.html';
+    });
 
     function loadGameStats() {
         const games = JSON.parse(localStorage.getItem('games')) || [];

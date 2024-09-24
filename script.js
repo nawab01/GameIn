@@ -105,7 +105,11 @@ function showPlayer() {
         localStorage.setItem('games', JSON.stringify(games));
     }
 
-    // Add stats link
+    // Update stats link
+    const existingStatsLink = document.querySelector('.stats-link');
+    if (existingStatsLink) {
+        existingStatsLink.remove();
+    }
     const statsLink = document.createElement('a');
     statsLink.href = `stats.html?gameId=${currentGameId}`;
     statsLink.textContent = 'View Stats';
@@ -189,17 +193,19 @@ function addCourt(button, team) {
         button.setAttribute('data-state', '0');
     }
 
-    // Update game stats
-    const buttonIndex = Array.from(button.parentNode.children).indexOf(button);
-    const teamIndex = team === 'One' ? 0 : 1;
-    const statObject = {
-        timestamp: Date.now(),
-        team: team,
-        buttonIndex: buttonIndex,
-        state: button.getAttribute('data-state'),
-        note: button.querySelector('.note-cloud')?.title || ''
-    };
-    gameStats.push(statObject);
+    // Update game stats only if there's a note
+    const note = button.querySelector('.note-cloud')?.title || '';
+    if (note.trim() !== '') {
+        const buttonIndex = Array.from(button.parentNode.children).indexOf(button);
+        const statObject = {
+            timestamp: Date.now(),
+            team: team,
+            buttonIndex: buttonIndex,
+            state: button.getAttribute('data-state'),
+            note: note
+        };
+        gameStats.push(statObject);
+    }
 
     checkScore(team);
 }
@@ -238,6 +244,18 @@ function saveNote() {
         
         currentButton.style.backgroundColor = 'rgb(0, 255, 255)';
         currentButton.setAttribute('data-state', '1');
+
+        // Update game stats
+        const buttonIndex = Array.from(currentButton.parentNode.children).indexOf(currentButton);
+        const teamIndex = currentButton.classList.contains('buttonsOne') ? 0 : 1;
+        const statObject = {
+            timestamp: Date.now(),
+            team: teamIndex === 0 ? 'One' : 'Two',
+            buttonIndex: buttonIndex,
+            state: currentButton.getAttribute('data-state'),
+            note: note
+        };
+        gameStats.push(statObject);
     } else {
         const existingNote = currentButton.querySelector('.note-cloud');
         if (existingNote) {
@@ -246,18 +264,6 @@ function saveNote() {
             currentButton.setAttribute('data-state', '0');
         }
     }
-
-    // Update game stats
-    const buttonIndex = Array.from(currentButton.parentNode.children).indexOf(currentButton);
-    const teamIndex = currentButton.classList.contains('buttonsOne') ? 0 : 1;
-    const statObject = {
-        timestamp: Date.now(),
-        team: teamIndex === 0 ? 'One' : 'Two',
-        buttonIndex: buttonIndex,
-        state: currentButton.getAttribute('data-state'),
-        note: noteText.value.trim()
-    };
-    gameStats.push(statObject);
 
     closeNoteModal();
     checkScore(currentButton.classList.contains('buttonsOne') ? 'One' : 'Two');
