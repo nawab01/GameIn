@@ -14,6 +14,8 @@ const buttonDivTwo = document.getElementById('buttonDivTwo');
 const categoryInput = document.getElementById('categoryInput');
 const categoryButton = document.getElementById('categoryButton');
 const categoryList = document.getElementById('categoryList');
+const refreshOne = document.getElementById('refreshOne');
+const refreshTwo = document.getElementById('refreshTwo');
 
 let currentButton;
 let scoreOne = 0;
@@ -60,15 +62,13 @@ function createGameBoard() {
 
     const addButtonsOne = document.querySelectorAll('.buttonsOne');
     addButtonsOne.forEach(button => {
-        button.addEventListener('click', addCourt);
-        button.addEventListener('click', () => checkScore('One'));
+        button.addEventListener('click', () => addCourt(button, 'One'));
         button.addEventListener('dblclick', openNoteModal);
     });
 
     const addButtonsTwo = document.querySelectorAll('.buttonsTwo');
     addButtonsTwo.forEach(button => {
-        button.addEventListener('click', addCourt);
-        button.addEventListener('click', () => checkScore('Two'));
+        button.addEventListener('click', () => addCourt(button, 'Two'));
         button.addEventListener('dblclick', openNoteModal);
     });
 }
@@ -127,10 +127,6 @@ function checkScore(team) {
         totalScoreTwo = Math.floor(totalScoreTwo / 5) * 5 + scoreTwo;
         updateScoreDisplay(scoreTwoDisplay, totalScoreTwo);
     }
-    
-    if (colorCount === 5) {
-        clearButtons(team);
-    }
 
     updateGameState();
 }
@@ -150,48 +146,40 @@ function clearButtons(team) {
     } else {
         scoreTwo = 0;
     }
+    checkScore(team);
 }
 
 function resetValue() {
-    document.querySelectorAll('.buttonsOne, .buttonsTwo').forEach(button => {
-        const noteCloud = button.querySelector('.note-cloud');
-        if (noteCloud) {
-            noteCloud.remove();
-        }
-        button.style.backgroundColor = 'rgb(240, 240, 240)';
-        button.setAttribute('data-state', '0');
-    });
-    scoreOne = 0;
-    scoreTwo = 0;
+    clearButtons('One');
+    clearButtons('Two');
     totalScoreOne = 0;
     totalScoreTwo = 0;
     updateScoreDisplay(scoreOneDisplay, totalScoreOne);
     updateScoreDisplay(scoreTwoDisplay, totalScoreTwo);
-
     updateGameState();
 }
 
-function addCourt(event) {
-    if (event.target.classList.contains('note-cloud')) {
+function addCourt(button, team) {
+    if (button.classList.contains('note-cloud')) {
         return;
     }
 
-    const clickedButton = event.currentTarget;
-    const noteCloud = clickedButton.querySelector('.note-cloud');
-
+    const noteCloud = button.querySelector('.note-cloud');
     if (noteCloud) {
         return;
     }
 
-    const currentState = parseInt(clickedButton.getAttribute('data-state'));
+    const currentState = parseInt(button.getAttribute('data-state'));
 
     if (currentState % 2 === 0) {
-        clickedButton.style.backgroundColor = 'rgb(0, 255, 255)';
-        clickedButton.setAttribute('data-state', '1');
+        button.style.backgroundColor = 'rgb(0, 255, 255)';
+        button.setAttribute('data-state', '1');
     } else {
-        clickedButton.style.backgroundColor = 'rgb(240, 240, 240)';
-        clickedButton.setAttribute('data-state', '0');
+        button.style.backgroundColor = 'rgb(240, 240, 240)';
+        button.setAttribute('data-state', '0');
     }
+
+    checkScore(team);
 }
 
 function openNoteModal(event) {
@@ -237,11 +225,7 @@ function saveNote() {
         }
     }
     closeNoteModal();
-    if (currentButton.classList.contains('buttonsOne')) {
-        checkScore('One');
-    } else {
-        checkScore('Two');
-    }
+    checkScore(currentButton.classList.contains('buttonsOne') ? 'One' : 'Two');
 }
 
 function updateGameState() {
@@ -282,7 +266,6 @@ function restoreButtonStates(states, notes) {
             button.setAttribute('data-state', '0');
         }
         
-        // Restore notes
         if (notes && notes[index]) {
             let noteCloud = button.querySelector('.note-cloud');
             if (!noteCloud) {
@@ -343,6 +326,9 @@ document.getElementById('buttonSubmit').addEventListener('click', showPlayer);
 
 const reset = document.getElementById('resetButton');
 reset.addEventListener('click', resetValue);
+
+refreshOne.addEventListener('click', () => clearButtons('One'));
+refreshTwo.addEventListener('click', () => clearButtons('Two'));
 
 closeBtn.addEventListener('click', closeNoteModal);
 saveNoteBtn.addEventListener('click', saveNote);
