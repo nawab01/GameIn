@@ -1,68 +1,97 @@
-// stats.js
 document.addEventListener('DOMContentLoaded', () => {
-    const statsContainer = document.getElementById('statsContainer');
-    const modal = document.getElementById('notesModal');
-    const closeBtn = document.querySelector('.close');
+    const urlParams = new URLSearchParams(window.location.search);
+    const gameId = parseInt(urlParams.get('gameId'));
 
-    function displayStats() {
-        const stats = JSON.parse(localStorage.getItem('gameStats')) || {};
+    const gameInfo = document.getElementById('gameInfo');
+    const teamOneStats = document.getElementById('teamOneStats');
+    const teamTwoStats = document.getElementById('teamTwoStats');
+
+    function loadGameStats() {
         const games = JSON.parse(localStorage.getItem('games')) || [];
+        const game = games.find(g => g.id === gameId);
 
-        games.forEach(game => {
-            const gameStats = stats[game.id.toString()];
-            if (gameStats && Object.keys(gameStats.wins).length > 0) {
-                const gameDiv = document.createElement('div');
-                gameDiv.classList.add('game-stats');
-
-                const gameTitle = document.createElement('h2');
-                gameTitle.textContent = `${game.teamOne} vs ${game.teamTwo} (${game.category})`;
-                gameDiv.appendChild(gameTitle);
-
-                Object.entries(gameStats.wins).forEach(([winner, wins]) => {
-                    const winButton = document.createElement('button');
-                    winButton.textContent = `${winner}: ${wins} wins`;
-                    winButton.classList.add('win-button');
-                    winButton.addEventListener('click', () => showNotes(game.id, winner));
-                    gameDiv.appendChild(winButton);
-                });
-
-                statsContainer.appendChild(gameDiv);
-            }
-        });
-    }
-
-    function showNotes(gameId, winner) {
-        const stats = JSON.parse(localStorage.getItem('gameStats')) || {};
-        const gameStats = stats[gameId.toString()];
-        const notes = gameStats.notes[winner] || [];
-
-        const notesContainer = document.getElementById('notesContainer');
-        notesContainer.innerHTML = '';
-
-        if (notes.length === 0) {
-            notesContainer.textContent = 'No notes available for this winner.';
+        if (game) {
+            displayGameInfo(game);
+            displayTeamStats(game, 'One');
+            displayTeamStats(game, 'Two');
         } else {
-            notes.forEach(note => {
-                const noteElem = document.createElement('p');
-                noteElem.textContent = note;
-                notesContainer.appendChild(noteElem);
-            });
+            gameInfo.textContent = 'Game not found';
         }
+    }
 
+    function displayGameInfo(game) {
+        gameInfo.innerHTML = `
+            <p>Category: ${game.category}</p>
+            <p>Score: ${game.teamOne} ${game.scoreOne} - ${game.scoreTwo} ${game.teamTwo}</p>
+        `;
+        teamOneStats.querySelector('h2').textContent = game.teamOne;
+        teamTwoStats.querySelector('h2').textContent = game.teamTwo;
+    }
+
+    function displayTeamStats(game, team) {
+        const container = team === 'One' ? teamOneStats : teamTwoStats;
+        const buttonContainer = container.querySelector('.buttonContainer');
+        buttonContainer.innerHTML = '';
+
+        const score = team === 'One' ? game.scoreOne : game.scoreTwo;
+        const buttonStates = team === 'One' ? game.buttonStates.slice(0, 5) : game.buttonStates.slice(5);
+        const notes = team === 'One' ? game.notes.slice(0, 5) : game.notes.slice(5);
+
+        for (let i = 0; i < score; i++) {
+            const button = document.createElement('div');
+            button.className = 'statButton active';
+            button.setAttribute('data-index', i);
+            buttonContainer.appendChild(button);
+
+            if (notes[i]) {
+                const noteElement = document.createElement('div');
+                noteElement.className = 'statNote';
+                noteElement.textContent = notes[i].substring(0, 10) + (notes[i].length > 10 ? '...' : '');
+                noteElement.title = notes[i];
+                button.appendChild(noteElement);
+            }
+
+            button.addEventListener('click', () => showNoteHistory(game, team, i));
+        }
+    }
+
+    function showNoteHistory(game, team, index) {
+        const buttonIndex = team === 'One' ? index : index + 5;
+        const notes = game.stats.filter(stat => 
+            stat.team === team && stat.buttonIndex === index
+        ).map(stat => ({
+            timestamp: new Date(stat.timestamp).toLocaleString(),
+            note: stat.note
+        }));
+
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Note History</h2>
+                <ul>
+                    ${notes.map(note => `<li>${note.timestamp}: ${note.note || 'No note'}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
         modal.style.display = 'block';
-    }
 
-    displayStats();
-
-    // Close modal when clicking on x
-    closeBtn.onclick = function() {
-        modal.style.display = 'none';
-    }
-
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-        if (event.target == modal) {
+        const closeBtn = modal.querySelector('.close');
+        closeBtn.onclick = () => {
             modal.style.display = 'none';
-        }
+            modal.remove();
+        };
+
+        window.onclick = (event) => {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+                modal.remove();
+            }
+        };
     }
+
+    loadGameStats();
 });

@@ -23,6 +23,7 @@ let scoreTwo = 0;
 let totalScoreOne = 0;
 let totalScoreTwo = 0;
 let currentGameId = null;
+let gameStats = [];
 
 appContainer.style.display = 'none';
 
@@ -38,6 +39,7 @@ function loadExistingGame() {
             currentGameId = game.id;
             totalScoreOne = game.scoreOne;
             totalScoreTwo = game.scoreTwo;
+            gameStats = game.stats || [];
             showPlayer();
             updateScoreDisplay(scoreOneDisplay, totalScoreOne);
             updateScoreDisplay(scoreTwoDisplay, totalScoreTwo);
@@ -95,12 +97,20 @@ function showPlayer() {
             scoreOne: 0,
             scoreTwo: 0,
             buttonStates: Array(10).fill(0),
-            notes: Array(10).fill('')
+            notes: Array(10).fill(''),
+            stats: []
         };
         let games = JSON.parse(localStorage.getItem('games')) || [];
         games.push(newGame);
         localStorage.setItem('games', JSON.stringify(games));
     }
+
+    // Add stats link
+    const statsLink = document.createElement('a');
+    statsLink.href = `stats.html?gameId=${currentGameId}`;
+    statsLink.textContent = 'View Stats';
+    statsLink.className = 'stats-link';
+    appContainer.appendChild(statsLink);
 }
 
 function updateScoreDisplay(scoreDisplay, score) {
@@ -179,6 +189,18 @@ function addCourt(button, team) {
         button.setAttribute('data-state', '0');
     }
 
+    // Update game stats
+    const buttonIndex = Array.from(button.parentNode.children).indexOf(button);
+    const teamIndex = team === 'One' ? 0 : 1;
+    const statObject = {
+        timestamp: Date.now(),
+        team: team,
+        buttonIndex: buttonIndex,
+        state: button.getAttribute('data-state'),
+        note: button.querySelector('.note-cloud')?.title || ''
+    };
+    gameStats.push(statObject);
+
     checkScore(team);
 }
 
@@ -224,6 +246,19 @@ function saveNote() {
             currentButton.setAttribute('data-state', '0');
         }
     }
+
+    // Update game stats
+    const buttonIndex = Array.from(currentButton.parentNode.children).indexOf(currentButton);
+    const teamIndex = currentButton.classList.contains('buttonsOne') ? 0 : 1;
+    const statObject = {
+        timestamp: Date.now(),
+        team: teamIndex === 0 ? 'One' : 'Two',
+        buttonIndex: buttonIndex,
+        state: currentButton.getAttribute('data-state'),
+        note: noteText.value.trim()
+    };
+    gameStats.push(statObject);
+
     closeNoteModal();
     checkScore(currentButton.classList.contains('buttonsOne') ? 'One' : 'Two');
 }
@@ -237,6 +272,7 @@ function updateGameState() {
             games[gameIndex].scoreTwo = totalScoreTwo;
             games[gameIndex].buttonStates = getButtonStates();
             games[gameIndex].notes = getNotes();
+            games[gameIndex].stats = gameStats;
             localStorage.setItem('games', JSON.stringify(games));
         }
     }

@@ -3,20 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Statistics</title>
+    <title>Game Stats</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="stats.css">
 </head>
 <body>
-    <div id="statsContainer"></div>
-
-    <div id="notesModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Notes</h2>
-            <div id="notesContainer"></div>
+    <div id="backArrow">
+        <a href="gameboard.html">←</a>
+    </div>
+    <div id="statsContainer">
+        <h1>Game Stats</h1>
+        <div id="gameInfo"></div>
+        <div id="teamOneStats">
+            <h2></h2>
+            <div class="buttonContainer"></div>
+        </div>
+        <div id="teamTwoStats">
+            <h2></h2>
+            <div class="buttonContainer"></div>
         </div>
     </div>
-
     <script src="stats.js"></script>
 </body>
 </html>
