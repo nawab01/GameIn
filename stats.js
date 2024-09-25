@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const teamTwoStats = document.getElementById('teamTwoStats');
     const backToGameLink = document.getElementById('backToGame');
 
+    console.log('Game ID from URL:', gameId); // Debugging: Log the game ID from URL
+
     // Set up the back link functionality
     backToGameLink.addEventListener('click', () => {
         localStorage.setItem('currentGameId', gameId);
@@ -14,8 +16,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function loadGameStats() {
-        const games = JSON.parse(localStorage.getItem('games')) || [];
+        console.log('Loading game stats...'); // Debugging: Log when function is called
+        let games;
+        try {
+            games = JSON.parse(localStorage.getItem('games')) || [];
+            console.log('All games:', games); // Debugging: Log all games
+        } catch (error) {
+            console.error('Error parsing games from localStorage:', error);
+            games = [];
+        }
+
         const game = games.find(g => g.id === gameId);
+        console.log('Found game:', game); // Debugging: Log the found game
 
         if (game) {
             displayGameInfo(game);
@@ -23,10 +35,12 @@ document.addEventListener('DOMContentLoaded', () => {
             displayTeamStats(game, 'Two');
         } else {
             gameInfo.textContent = 'Game not found';
+            console.error('Game not found for ID:', gameId); // Debugging: Log error if game not found
         }
     }
 
     function displayGameInfo(game) {
+        console.log('Displaying game info:', game); // Debugging: Log the game being displayed
         gameInfo.innerHTML = `
             <p>Category: ${game.category}</p>
             <p>Score: ${game.teamOne} ${game.scoreOne} - ${game.scoreTwo} ${game.teamTwo}</p>
@@ -36,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function displayTeamStats(game, team) {
+        console.log(`Displaying stats for team ${team}:`, game); // Debugging: Log the team and game data
         const container = team === 'One' ? teamOneStats : teamTwoStats;
         const buttonContainer = container.querySelector('.buttonContainer');
         buttonContainer.innerHTML = '';
@@ -44,9 +59,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const buttonStates = team === 'One' ? game.buttonStates.slice(0, 5) : game.buttonStates.slice(5);
         const notes = team === 'One' ? game.notes.slice(0, 5) : game.notes.slice(5);
 
-        for (let i = 0; i < score; i++) {
+        console.log(`Team ${team} score:`, score); // Debugging: Log the score
+
+        for (let i = 0; i < 5; i++) {
             const button = document.createElement('div');
-            button.className = 'statButton active';
+            button.className = i < score ? 'statButton active' : 'statButton';
             button.setAttribute('data-index', i);
             buttonContainer.appendChild(button);
 
@@ -63,6 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showNoteHistory(game, team, index) {
+        console.log(`Showing note history for team ${team}, button ${index}`); // Debugging: Log when showing note history
         const buttonIndex = team === 'One' ? index : index + 5;
         const notes = game.stats.filter(stat => 
             stat.team === team && stat.buttonIndex === index
