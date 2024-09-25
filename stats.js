@@ -7,27 +7,43 @@ document.addEventListener('DOMContentLoaded', () => {
     const teamTwoStats = document.getElementById('teamTwoStats');
     const backToGameLink = document.getElementById('backToGame');
 
-    console.log('Game ID from URL:', gameId); // Debugging: Log the game ID from URL
+    console.log('Game ID from URL:', gameId);
 
     // Set up the back link functionality
     backToGameLink.addEventListener('click', () => {
-        localStorage.setItem('currentGameId', gameId);
+        setStorageItem('currentGameId', gameId);
         window.location.href = 'gameboard.html';
     });
 
-    function loadGameStats() {
-        console.log('Loading game stats...'); // Debugging: Log when function is called
-        let games;
+    function setStorageItem(key, value) {
         try {
-            games = JSON.parse(localStorage.getItem('games')) || [];
-            console.log('All games:', games); // Debugging: Log all games
-        } catch (error) {
-            console.error('Error parsing games from localStorage:', error);
-            games = [];
+            localStorage.setItem(key, JSON.stringify(value));
+        } catch (e) {
+            console.error('localStorage setItem failed, falling back to sessionStorage', e);
+            sessionStorage.setItem(key, JSON.stringify(value));
         }
+    }
+
+    function getStorageItem(key) {
+        let value;
+        try {
+            value = localStorage.getItem(key);
+            console.log(`localStorage value for ${key}:`, value);
+        } catch (e) {
+            console.error('localStorage getItem failed, trying sessionStorage', e);
+            value = sessionStorage.getItem(key);
+            console.log(`sessionStorage value for ${key}:`, value);
+        }
+        return value ? JSON.parse(value) : null;
+    }
+
+    function loadGameStats() {
+        console.log('Loading game stats...');
+        let games = getStorageItem('games') || [];
+        console.log('All games:', games);
 
         const game = games.find(g => g.id === gameId);
-        console.log('Found game:', game); // Debugging: Log the found game
+        console.log('Found game:', game);
 
         if (game) {
             displayGameInfo(game);
@@ -35,12 +51,12 @@ document.addEventListener('DOMContentLoaded', () => {
             displayTeamStats(game, 'Two');
         } else {
             gameInfo.textContent = 'Game not found';
-            console.error('Game not found for ID:', gameId); // Debugging: Log error if game not found
+            console.error('Game not found for ID:', gameId);
         }
     }
 
     function displayGameInfo(game) {
-        console.log('Displaying game info:', game); // Debugging: Log the game being displayed
+        console.log('Displaying game info:', game);
         gameInfo.innerHTML = `
             <p>Category: ${game.category}</p>
             <p>Score: ${game.teamOne} ${game.scoreOne} - ${game.scoreTwo} ${game.teamTwo}</p>
@@ -50,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function displayTeamStats(game, team) {
-        console.log(`Displaying stats for team ${team}:`, game); // Debugging: Log the team and game data
+        console.log(`Displaying stats for team ${team}:`, game);
         const container = team === 'One' ? teamOneStats : teamTwoStats;
         const buttonContainer = container.querySelector('.buttonContainer');
         buttonContainer.innerHTML = '';
@@ -59,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const buttonStates = team === 'One' ? game.buttonStates.slice(0, 5) : game.buttonStates.slice(5);
         const notes = team === 'One' ? game.notes.slice(0, 5) : game.notes.slice(5);
 
-        console.log(`Team ${team} score:`, score); // Debugging: Log the score
+        console.log(`Team ${team} score:`, score);
 
         for (let i = 0; i < 5; i++) {
             const button = document.createElement('div');
@@ -80,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showNoteHistory(game, team, index) {
-        console.log(`Showing note history for team ${team}, button ${index}`); // Debugging: Log when showing note history
+        console.log(`Showing note history for team ${team}, button ${index}`);
         const buttonIndex = team === 'One' ? index : index + 5;
         const notes = game.stats.filter(stat => 
             stat.team === team && stat.buttonIndex === index
