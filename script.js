@@ -38,17 +38,30 @@ const gameState = {
     gameStats: []
 };
 
-// localStorage.js
+// storage.js
 const storage = {
-    saveGame(game) {
-        let games = JSON.parse(localStorage.getItem('games')) || [];
-        const index = games.findIndex(g => g.id === game.id);
-        if (index !== -1) {
-            games[index] = game;
-        } else {
-            games.push(game);
+    saveGame() {
+        if (gameState.currentGameId) {
+            const game = {
+                id: gameState.currentGameId,
+                teamOne: domElements.teamOne.value,
+                teamTwo: domElements.teamTwo.value,
+                category: domElements.categoryInput.value,
+                scoreOne: gameState.totalScoreOne,
+                scoreTwo: gameState.totalScoreTwo,
+                buttonStates: gameBoard.getStates(),
+                notes: gameBoard.getNotes(),
+                stats: gameState.gameStats
+            };
+            let games = JSON.parse(localStorage.getItem('games')) || [];
+            const index = games.findIndex(g => g.id === game.id);
+            if (index !== -1) {
+                games[index] = game;
+            } else {
+                games.push(game);
+            }
+            localStorage.setItem('games', JSON.stringify(games));
         }
-        localStorage.setItem('games', JSON.stringify(games));
     },
     loadGame(gameId) {
         const games = JSON.parse(localStorage.getItem('games')) || [];
@@ -109,6 +122,7 @@ const gameBoard = {
         }
 
         score.check(team);
+        storage.saveGame(); // Save state after each button press
     },
     clear(team) {
         document.querySelectorAll(`.buttons${team}`).forEach(button => {
@@ -121,6 +135,7 @@ const gameBoard = {
         });
         gameState[`score${team}`] = 0;
         score.check(team);
+        storage.saveGame(); // Save state after clearing buttons
     },
     getStates() {
         return [...document.querySelectorAll('.buttonsOne'), ...document.querySelectorAll('.buttonsTwo')]
@@ -154,7 +169,7 @@ const score = {
         gameState[`score${team}`] = colorCount;
         gameState[`totalScore${team}`] = Math.floor(gameState[`totalScore${team}`] / 5) * 5 + colorCount;
         this.updateDisplay(team);
-        gameState.updateState();
+        storage.saveGame(); // Save state after updating score
     },
     updateDisplay(team) {
         domElements[`score${team}Display`].innerText = gameState[`totalScore${team}`];
@@ -167,7 +182,7 @@ const score = {
         gameState.totalScoreTwo = 0;
         this.updateDisplay('One');
         this.updateDisplay('Two');
-        gameState.updateState();
+        storage.saveGame(); // Save state after resetting scores
     }
 };
 
@@ -210,6 +225,7 @@ const noteModal = {
 
         this.close();
         score.check(gameState.currentButton.classList.contains('buttonsOne') ? 'One' : 'Two');
+        storage.saveGame(); // Save state after updating note
     },
     createNoteCloud(button, note) {
         let noteCloud = button.querySelector('.note-cloud');
@@ -307,18 +323,7 @@ const game = {
         
         if (!gameState.currentGameId) {
             gameState.currentGameId = Date.now();
-            const newGame = {
-                id: gameState.currentGameId,
-                teamOne: domElements.teamOne.value,
-                teamTwo: domElements.teamTwo.value,
-                category: category,
-                scoreOne: 0,
-                scoreTwo: 0,
-                buttonStates: Array(10).fill(0),
-                notes: Array(10).fill(''),
-                stats: []
-            };
-            storage.saveGame(newGame);
+            storage.saveGame(); // Save initial game state
         }
 
         this.updateStatsLink();
@@ -333,22 +338,6 @@ const game = {
         statsLink.textContent = 'stats';
         statsLink.className = 'stats-link';
         domElements.appContainer.appendChild(statsLink);
-    },
-    updateState() {
-        if (gameState.currentGameId) {
-            const game = {
-                id: gameState.currentGameId,
-                teamOne: domElements.teamOne.value,
-                teamTwo: domElements.teamTwo.value,
-                category: domElements.categoryInput.value,
-                scoreOne: gameState.totalScoreOne,
-                scoreTwo: gameState.totalScoreTwo,
-                buttonStates: gameBoard.getStates(),
-                notes: gameBoard.getNotes(),
-                stats: gameState.gameStats
-            };
-            storage.saveGame(game);
-        }
     },
     addEventListeners() {
         domElements.buttonSubmit.addEventListener('click', () => this.showPlayer());
@@ -368,7 +357,15 @@ const game = {
             }
         });
 
-        window.addEventListener('beforeunload', () => this.updateState());
+        // Use 'pagehide' event for better iOS compatibility
+        window.addEventListener('pagehide', () => storage.saveGame());
+
+        // Use Page Visibility API for additional state saving
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                storage.saveGame();
+            }
+        });
     }
 };
 
