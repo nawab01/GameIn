@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const gameId = parseInt(urlParams.get('gameId'));
+    const scoreFromUrl = urlParams.get('score');
 
     const gameInfo = document.getElementById('gameInfo');
     const teamOneStats = document.getElementById('teamOneStats');
@@ -8,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const backToGameLink = document.getElementById('backToGame');
 
     console.log('Game ID from URL:', gameId);
+    console.log('Score from URL:', scoreFromUrl);
 
     // Set up the back link functionality
     backToGameLink.addEventListener('click', () => {
@@ -15,35 +17,22 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'gameboard.html';
     });
 
-    function setStorageItem(key, value) {
-        try {
-            localStorage.setItem(key, JSON.stringify(value));
-        } catch (e) {
-            console.error('localStorage setItem failed, falling back to sessionStorage', e);
-            sessionStorage.setItem(key, JSON.stringify(value));
-        }
-    }
-
-    function getStorageItem(key) {
-        let value;
-        try {
-            value = localStorage.getItem(key);
-            console.log(`localStorage value for ${key}:`, value);
-        } catch (e) {
-            console.error('localStorage getItem failed, trying sessionStorage', e);
-            value = sessionStorage.getItem(key);
-            console.log(`sessionStorage value for ${key}:`, value);
-        }
-        return value ? JSON.parse(value) : null;
-    }
-
     function loadGameStats() {
         console.log('Loading game stats...');
         let games = getStorageItem('games') || [];
         console.log('All games:', games);
 
-        const game = games.find(g => g.id === gameId);
+        let game = games.find(g => g.id === gameId);
         console.log('Found game:', game);
+
+        if (!game && scoreFromUrl) {
+            // If game not found in storage but score is in URL, create a temporary game object
+            game = {
+                id: gameId,
+                ...JSON.parse(decodeURIComponent(scoreFromUrl))
+            };
+            console.log('Created temporary game object from URL data:', game);
+        }
 
         if (game) {
             displayGameInfo(game);
@@ -58,11 +47,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function displayGameInfo(game) {
         console.log('Displaying game info:', game);
         gameInfo.innerHTML = `
-            <p>Category: ${game.category}</p>
-            <p>Score: ${game.teamOne} ${game.scoreOne} - ${game.scoreTwo} ${game.teamTwo}</p>
+            <p>Category: ${game.category || 'N/A'}</p>
+            <p>Score: ${game.teamOne || 'Team One'} ${game.scoreOne || 0} - ${game.scoreTwo || 0} ${game.teamTwo || 'Team Two'}</p>
         `;
-        teamOneStats.querySelector('h2').textContent = game.teamOne;
-        teamTwoStats.querySelector('h2').textContent = game.teamTwo;
+        teamOneStats.querySelector('h2').textContent = game.teamOne || 'Team One';
+        teamTwoStats.querySelector('h2').textContent = game.teamTwo || 'Team Two';
     }
 
     function displayTeamStats(game, team) {
@@ -72,18 +61,18 @@ document.addEventListener('DOMContentLoaded', () => {
         buttonContainer.innerHTML = '';
 
         const score = team === 'One' ? game.scoreOne : game.scoreTwo;
-        const buttonStates = team === 'One' ? game.buttonStates.slice(0, 5) : game.buttonStates.slice(5);
-        const notes = team === 'One' ? game.notes.slice(0, 5) : game.notes.slice(5);
+        const buttonStates = team === 'One' ? game.buttonStates?.slice(0, 5) : game.buttonStates?.slice(5);
+        const notes = team === 'One' ? game.notes?.slice(0, 5) : game.notes?.slice(5);
 
         console.log(`Team ${team} score:`, score);
 
         for (let i = 0; i < 5; i++) {
             const button = document.createElement('div');
-            button.className = i < score ? 'statButton active' : 'statButton';
+            button.className = (buttonStates && buttonStates[i]) ? 'statButton active' : 'statButton';
             button.setAttribute('data-index', i);
             buttonContainer.appendChild(button);
 
-            if (notes[i]) {
+            if (notes && notes[i]) {
                 const noteElement = document.createElement('div');
                 noteElement.className = 'statNote';
                 noteElement.textContent = notes[i].substring(0, 10) + (notes[i].length > 10 ? '...' : '');
@@ -98,12 +87,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function showNoteHistory(game, team, index) {
         console.log(`Showing note history for team ${team}, button ${index}`);
         const buttonIndex = team === 'One' ? index : index + 5;
-        const notes = game.stats.filter(stat => 
+        const notes = game.stats?.filter(stat => 
             stat.team === team && stat.buttonIndex === index
         ).map(stat => ({
             timestamp: new Date(stat.timestamp).toLocaleString(),
             note: stat.note
-        }));
+        })) || [];
 
         const modal = document.createElement('div');
         modal.className = 'modal';
