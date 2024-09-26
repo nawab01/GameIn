@@ -312,8 +312,8 @@ const game = {
                 teamOne: domElements.teamOne.value,
                 teamTwo: domElements.teamTwo.value,
                 category: category,
-                // scoreOne: 0,
-                // scoreTwo: 0,
+                scoreOne: 0,
+                scoreTwo: 0,
                 buttonStates: Array(10).fill(0),
                 notes: Array(10).fill(''),
                 stats: []
