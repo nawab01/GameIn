@@ -72,14 +72,14 @@ document.addEventListener('DOMContentLoaded', () => {
         buttonContainer.innerHTML = '';
 
         const score = team === 'One' ? game.scoreOne : game.scoreTwo;
-        const buttonStates = team === 'One' ? game.buttonStates.slice(0, 5) : game.buttonStates.slice(5);
-        const notes = team === 'One' ? game.notes.slice(0, 5) : game.notes.slice(5);
+        const notes = team === 'One' ? game.notes.slice(0, game.notes.length / 2) : game.notes.slice(game.notes.length / 2);
 
         console.log(`Team ${team} score:`, score);
 
-        for (let i = 0; i < 5; i++) {
+        // Create buttons based on the actual score
+        for (let i = 0; i < score; i++) {
             const button = document.createElement('div');
-            button.className = i < score ? 'statButton active' : 'statButton';
+            button.className = 'statButton active';
             button.setAttribute('data-index', i);
             buttonContainer.appendChild(button);
 
@@ -93,11 +93,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
             button.addEventListener('click', () => showNoteHistory(game, team, i));
         }
+
+        // Display total score
+        const totalScoreElement = document.createElement('div');
+        totalScoreElement.className = 'totalScore';
+        totalScoreElement.textContent = `Total Score: ${score}`;
+        container.appendChild(totalScoreElement);
+
+        // Display total notes
+        const totalNotes = notes.filter(note => note).length;
+        const totalNotesElement = document.createElement('div');
+        totalNotesElement.className = 'totalNotes';
+        totalNotesElement.textContent = `Total Notes: ${totalNotes}`;
+        container.appendChild(totalNotesElement);
     }
 
     function showNoteHistory(game, team, index) {
         console.log(`Showing note history for team ${team}, button ${index}`);
-        const buttonIndex = team === 'One' ? index : index + 5;
+        const buttonIndex = team === 'One' ? index : index + game.notes.length / 2;
         const notes = game.stats.filter(stat => 
             stat.team === team && stat.buttonIndex === index
         ).map(stat => ({
