@@ -94,18 +94,6 @@ document.addEventListener('DOMContentLoaded', () => {
             button.addEventListener('click', () => showNoteHistory(game, team, i));
         }
 
-        // Display total score
-        const totalScoreElement = document.createElement('div');
-        totalScoreElement.className = 'totalScore';
-        totalScoreElement.textContent = `Total Score: ${score}`;
-        container.appendChild(totalScoreElement);
-
-        // Display total notes
-        const totalNotes = notes.filter(note => note).length;
-        const totalNotesElement = document.createElement('div');
-        totalNotesElement.className = 'totalNotes';
-        totalNotesElement.textContent = `Total Notes: ${totalNotes}`;
-        container.appendChild(totalNotesElement);
     }
 
     function showNoteHistory(game, team, index) {
